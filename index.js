@@ -8,7 +8,10 @@ app.get('/', (req, res)=>{
 
 
 io.on('connection', (socket)=>{
-    console.log("some user connected");
+    console.log('some user connected');
+    socket.on('disconnect', ()=>{
+        console.log('some user disconnected');
+    });
 })
 
 
