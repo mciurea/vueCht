@@ -9,8 +9,17 @@ app.get('/', (req, res)=>{
 
 io.on('connection', (socket)=>{
     console.log('some user connected');
+
     socket.on('disconnect', ()=>{
         console.log('some user disconnected');
+    });
+
+    socket.on('created', (data)=>{
+        console.log(data);
+    });
+
+    socket.on('new message', (data)=>{
+        io.emit('new message', data);
     });
 })
 

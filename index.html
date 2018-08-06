@@ -6,15 +6,90 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Chat application</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
+    <style>
+        .self-msg {
+            text-align: right;
+        }
+
+        .card-body span {
+            padding: 9px 9px 9px 9px;
+            border-radius: 20px;
+        }
+    </style>
+
 </head>
 
 <body>
-    <h1>chat app</h1>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
+    <div id="cont">
+
+        <div class="card col-lg-6 offset-lg-3">
+            <div class="card-header bg-info">
+                Chat client application
+                <span class="text-white">{{currentUser}}</span>
+            </div>
+            <div class="card-body">
+                <div v-for="message in messages" :class="{'self-msg':message.user === 1}" style="line-height: 43px;">
+                    <span v-if="message.user === 1" class="bg-success text-white">{{message.messageBody}}</span>
+                    <span v-else class="bg-primary text-white">{{message.messageBody}}</span>
+                </div>
+                <form @submit.prevent="send">
+                    <div class="form-group">
+                        <input v-model="newMessage" type="text" class="form-control" id="message-input" placeholder="Type here">
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+
+
+    </div>
+
     <script>
         var socket = io();
-        var app = new Vue();
+        var app = new Vue({
+            el: '#cont',
+            data: {
+                msg: 'vue app created',
+                messages: [
+                    { user: 'user5000', messageBody: 'this is message 1 this is message 1' },
+                    { user: 1, messageBody: 'this is message 2' },
+                    { user: 'user5002', messageBody: 'this is message 3' },
+                    { user: 1, messageBody: 'this is message 4 this is message 4 ' },
+                    { user: 'user5004', messageBody: 'this is message 5' },
+                ],
+                newMessage: "",
+                currentUser: "user"
+            },
+            methods: {
+                send(){
+                    if (this.newMessage) {
+                        console.log(this.newMessage);
+                        socket.emit('new message', { user: this.currentUser, messageBody: this.newMessage });
+                        this.newMessage = "";
+                    }
+                }
+            },
+            created() {
+                console.log("vue instance created");
+                this.currentUser += (Math.round(Math.random() * 10000));
+                socket.emit('created', "user "+this.currentUser+" connected");
+
+                socket.on('new message', (data) => {
+                    if(data.user == this.currentUser){
+                        data.user = 1
+                    }
+                    this.messages.push(data);
+                    console.log(data);
+                });
+            },
+        });
     </script>
 </body>
+
 </html>
