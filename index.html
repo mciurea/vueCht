@@ -25,22 +25,34 @@
 
 <body>
     <div id="cont">
-
         <div class="card col-lg-6 offset-lg-3">
-            <div class="card-header bg-info">
-                Chat client application
-                <span class="text-white">{{currentUser}}</span>
-            </div>
-            <div class="card-body">
-                <div v-for="message in messages" :class="{'self-msg':message.user === 1}" style="line-height: 43px;">
-                    <span v-if="message.user === 1" class="bg-success text-white">{{message.messageBody}}</span>
-                    <span v-else class="bg-primary text-white">{{message.messageBody}}</span>
-                </div>
-                <form @submit.prevent="send">
-                    <div class="form-group">
-                        <input v-model="newMessage" type="text" class="form-control" id="message-input" placeholder="Type here">
+            <div v-if="!ready" id="set-user">
+                <h3>Enter your username</h3>
+                <form @submit.prevent="setUser">
+                    <div class="form-group row">
+                        <input v-model="currentUser" type="text" class="form-control col-9" id="message-input" placeholder="Enter username" autocomplete="off">
+                        <input type="submit" value="Set username" class="btn btn-sm btn-info ml-1">
                     </div>
                 </form>
+            </div>
+            <div v-else id="chat-window">
+                <div class="card-header bg-info">
+                    Chat client application
+                    <span class="text-white">{{currentUser}}</span>
+                    <span v-for="user in userTyping" class="text-white align-right">{{user}}</span>
+                </div>
+                <div class="card-body">
+                    <div v-for="message in messages" :class="{'self-msg':message.user === 1}" style="line-height: 43px;">
+                        <span v-if="message.user === 1" class="bg-success text-white">{{message.messageBody}}</span>
+                        <span v-else class="bg-primary text-white">
+                            <span class="lead">{{message.user}}:</span> {{message.messageBody}}</span>
+                    </div>
+                    <form @submit.prevent="send">
+                        <div class="form-group">
+                            <input v-model="newMessage" type="text" class="form-control" id="message-input" placeholder="Type here" autocomplete="off">
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -57,35 +69,59 @@
             data: {
                 msg: 'vue app created',
                 messages: [
-                    { user: 'user5000', messageBody: 'this is message 1 this is message 1' },
-                    { user: 1, messageBody: 'this is message 2' },
-                    { user: 'user5002', messageBody: 'this is message 3' },
-                    { user: 1, messageBody: 'this is message 4 this is message 4 ' },
-                    { user: 'user5004', messageBody: 'this is message 5' },
+                    { user: 'Chat bot', messageBody: 'welcome message from chat bot' },
                 ],
                 newMessage: "",
-                currentUser: "user"
+                currentUser: "user",
+                typing: false,
+                userTyping: [],
+                ready: false
+            },
+            watch: {
+                newMessage(value) {
+                    value ? socket.emit('typing', { user: this.currentUser }) : socket.emit('stopTyping', { user: this.currentUser });
+                }
             },
             methods: {
-                send(){
+                send() {
                     if (this.newMessage) {
                         console.log(this.newMessage);
-                        socket.emit('new message', { user: this.currentUser, messageBody: this.newMessage });
+                        socket.emit('newMessage', { user: this.currentUser, messageBody: this.newMessage });
                         this.newMessage = "";
                     }
+                },
+                setUser(){
+                    this.ready = true;
                 }
             },
             created() {
-                console.log("vue instance created");
                 this.currentUser += (Math.round(Math.random() * 10000));
-                socket.emit('created', "user "+this.currentUser+" connected");
+                socket.emit('userConnected', this.currentUser);
 
-                socket.on('new message', (data) => {
-                    if(data.user == this.currentUser){
+                socket.on('newMessage', (data) => {
+                    if (data.user == this.currentUser) {
                         data.user = 1
                     }
                     this.messages.push(data);
                     console.log(data);
+                });
+
+                socket.on('newUser', (data) => {
+                    console.log(data);
+                });
+
+                socket.on('userTyping', data => {
+                    let index = this.userTyping.indexOf(data.user);
+                    if (index === -1) {
+                        this.userTyping.push(data.user);
+                    }
+                });
+
+                socket.on('userStopTyping', data => {
+                    let index = this.userTyping.indexOf(data.user);
+                    if (index !== -1) {
+                        this.userTyping.splice(index, 1);
+                    }
                 });
             },
         });

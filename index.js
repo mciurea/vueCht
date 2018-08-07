@@ -8,18 +8,25 @@ app.get('/', (req, res)=>{
 
 
 io.on('connection', (socket)=>{
-    console.log('some user connected');
 
     socket.on('disconnect', ()=>{
         console.log('some user disconnected');
     });
 
-    socket.on('created', (data)=>{
-        console.log(data);
+    socket.on('userConnected', (data)=>{
+        socket.broadcast.emit('newUser', data+' is now online');
     });
 
-    socket.on('new message', (data)=>{
-        io.emit('new message', data);
+    socket.on('newMessage', (data)=>{
+        io.emit('newMessage', data);
+    });
+
+    socket.on('typing', (data)=>{
+        socket.broadcast.emit('userTyping', data);
+    });
+
+    socket.on('stopTyping', (data)=>{
+        socket.broadcast.emit('userStopTyping', data);
     });
 })
 
